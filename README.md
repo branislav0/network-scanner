@@ -5,7 +5,7 @@ Simple ARP network scanner built on top of Scapy for discovering active devices 
 ## Run
 
 ```bash
-sudo python3 arp_scanner.py 192.168.1.1/24
+sudo python3 arp_scanner.py x/24
 ```
 
 Determine your actual `/24` range in the terminal (e.g., using `ip addr`) and replace the example above with it.
