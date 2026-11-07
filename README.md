@@ -1,6 +1,6 @@
 # Network Scanner
 
-Simple ARP network scanner built on top of [Scapy](https://scapy.net) for discovering active devices in a local subnet. Your own IP address is highlighted in the output.
+Simple ARP network scanner built on top of [Scapy](https://scapy.net) for discovering active devices in a local subnet. Your own machine is listed with its real MAC address and highlighted, but not counted among the found devices.
 
 ## Install
 
@@ -27,7 +27,8 @@ IP Address			MAC Address
 ----------------------------------------------------
 192.168.1.1			aa:bb:cc:dd:ee:01
 192.168.1.23			aa:bb:cc:dd:ee:17   <-- My IP
+192.168.1.40			aa:bb:cc:dd:ee:28
 ----------------------------------------------------
-Active devices found: 2
+Other devices found: 2
 Your IP identified as: 192.168.1.23
 ```
