@@ -11,9 +11,9 @@ def test_mdns_answer_gives_the_host_name():
         id=0,
         qr=1,
         aa=1,
-        an=[DNSRR(rrname="5.0.168.192.in-addr.arpa", type="PTR", rdata="branislav.local.")],
+        an=[DNSRR(rrname="5.0.168.192.in-addr.arpa", type="PTR", rdata="laptop.local.")],
     )
-    assert parse_mdns_response(bytes(answer)) == "branislav.local"
+    assert parse_mdns_response(bytes(answer)) == "laptop.local"
 
 
 def test_mdns_without_answer_gives_none():

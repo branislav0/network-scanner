@@ -2,9 +2,9 @@ from netscan.output import GREEN, YELLOW, render_table
 from netscan.scanner import Device
 
 DEVICES = [
-    Device(ip="192.168.0.1", mac="94:8f:cf:9a:25:89", hostname="router.lan", vendor="ARRIS"),
-    Device(ip="192.168.0.5", mac="8c:8b:5b:76:f2:df", hostname="my-laptop", is_me=True),
-    Device(ip="192.168.0.20", mac="de:2e:0c:7e:16:c2", vendor="(random MAC)"),
+    Device(ip="192.168.0.1", mac="00:00:5e:00:53:01", hostname="router.lan", vendor="ARRIS"),
+    Device(ip="192.168.0.5", mac="00:00:5e:00:53:05", hostname="my-laptop", is_me=True),
+    Device(ip="192.168.0.20", mac="02:00:00:00:00:20", vendor="(random MAC)"),
 ]
 
 
@@ -40,8 +40,8 @@ def test_empty_network():
 
 def test_unknown_devices_are_flagged_and_counted():
     devices = [
-        Device(ip="192.168.0.1", mac="94:8f:cf:9a:25:89", label="Router", known=True),
-        Device(ip="192.168.0.20", mac="de:2e:0c:7e:16:c2", hostname="android-1", known=False),
+        Device(ip="192.168.0.1", mac="00:00:5e:00:53:01", label="Router", known=True),
+        Device(ip="192.168.0.20", mac="02:00:00:00:00:20", hostname="android-1", known=False),
     ]
     text = render_table(devices, color=True)
 

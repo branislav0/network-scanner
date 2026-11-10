@@ -36,7 +36,7 @@ class Seen:
         return self.label or self.hostname or "?"
 
     def describe(self):
-        """e.g. "192.168.0.20 de:2e:0c:7e:16:c2 Annas-iPhone (random MAC)"."""
+        """e.g. "192.168.0.20 02:00:00:00:00:20 Annas-iPhone (random MAC)"."""
         parts = [self.ip, self.mac]
         name = clean(self.label, limit=80) or clean(self.hostname)
         if name:
