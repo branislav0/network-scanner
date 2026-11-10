@@ -7,6 +7,7 @@ into the cache, and lookups prefer it when it is there.
 
 import gzip
 import os
+import time
 import urllib.request
 import zlib
 
@@ -69,6 +70,14 @@ def _load_database():
         except OSError:
             _database = {}
     return _database
+
+
+def database_is_fresh(max_age=7 * 24 * 3600):
+    """True when a downloaded vendor list exists and is younger than max_age seconds."""
+    try:
+        return time.time() - database_path().stat().st_mtime < max_age
+    except OSError:
+        return False
 
 
 def has_database():

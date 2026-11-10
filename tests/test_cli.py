@@ -149,3 +149,102 @@ def test_suggests_updating_vendors_when_some_are_unknown(home_network, monkeypat
     monkeypatch.setattr(vendor, "lookup_vendor", lambda mac: None)
     assert cli.main([]) == 0
     assert "netscan --update-vendors" in capsys.readouterr().err
+
+
+class StopWatching(Exception):
+    pass
+
+
+def stop_after(rounds):
+    calls = []
+
+    def fake_sleep(seconds):
+        calls.append(seconds)
+        if len(calls) >= rounds:
+            raise StopWatching
+
+    return calls, fake_sleep
+
+
+def test_watch_prints_the_network_first_and_then_only_changes(
+    home_network, monkeypatch, tmp_path, capsys
+):
+    from netscan import scanner
+    from netscan.scanner import Device
+
+    rounds = [
+        [Device(ip="192.168.0.1", mac="94:8f:cf:9a:25:89")],
+        [Device(ip="192.168.0.1", mac="94:8f:cf:9a:25:89")],
+        [
+            Device(ip="192.168.0.1", mac="94:8f:cf:9a:25:89"),
+            Device(ip="192.168.0.66", mac="02:66:66:66:66:66"),
+        ],
+    ]
+    monkeypatch.setattr(scanner, "arp_scan", lambda target, iface, timeout: rounds.pop(0))
+    monkeypatch.setattr(vendor, "database_is_fresh", lambda: True)
+    sleeps, fake_sleep = stop_after(3)
+    monkeypatch.setattr(cli.time, "sleep", fake_sleep)
+    state = tmp_path / "state.json"
+
+    with pytest.raises(StopWatching):
+        cli.main(["--watch", "60", "--state", str(state)])
+    out, err = capsys.readouterr()
+
+    assert sleeps == [60, 60, 60]
+    assert "Watching 192.168.0.0/24 on wlan0 every 60s" in err
+    assert out.count("IP Address") == 1  # the table only once
+    joined = [line for line in out.splitlines() if "joined" in line]
+    assert len(joined) == 1 and "192.168.0.66" in joined[0]
+    assert state.exists()
+
+
+def test_watch_reports_to_uptime_kuma(home_network, monkeypatch, tmp_path, config_home):
+    pushes = []
+    monkeypatch.setattr(vendor, "database_is_fresh", lambda: True)
+    monkeypatch.setattr("netscan.watch.push_status", lambda url, state: pushes.append(url) or True)
+    monkeypatch.setattr(cli.time, "sleep", stop_after(1)[1])
+    monkeypatch.setenv("NETSCAN_PUSH_URL", "http://kuma/api/push/abc")
+
+    with pytest.raises(StopWatching):
+        cli.main(["--watch", "300", "--state", str(tmp_path / "s.json")])
+    assert pushes == ["http://kuma/api/push/abc"]
+
+
+def test_watch_survives_a_broken_vendor_download(home_network, monkeypatch, tmp_path, capsys):
+    def offline():
+        raise vendor.UpdateError("could not download the vendor list: offline")
+
+    monkeypatch.setattr(vendor, "database_is_fresh", lambda: False)
+    monkeypatch.setattr(vendor, "update_database", offline)
+    monkeypatch.setattr(cli.time, "sleep", stop_after(2)[1])
+
+    with pytest.raises(StopWatching):
+        cli.main(["--watch", "60", "--state", str(tmp_path / "s.json")])
+    err = capsys.readouterr().err
+    assert err.count("Keeping the old vendor list") == 1  # retried only after an hour
+
+
+def test_watch_keeps_going_while_the_devices_file_is_broken(
+    home_network, monkeypatch, tmp_path, capsys
+):
+    devices = tmp_path / "devices.toml"
+    devices.write_text(ROUTER)
+    monkeypatch.setattr(vendor, "database_is_fresh", lambda: True)
+
+    def break_file(seconds):
+        devices.write_text("[[device]\n")
+        monkeypatch.setattr(cli.time, "sleep", stop_after(1)[1])
+
+    monkeypatch.setattr(cli.time, "sleep", break_file)
+    with pytest.raises(StopWatching):
+        cli.main(["--watch", "60", "-d", str(devices), "--state", str(tmp_path / "s.json")])
+    assert "Using the previous known devices" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    "args", [["--watch", "10"], ["--watch", "x"], ["-w", "60", "--save-unknown"]]
+)
+def test_invalid_watch_options(args):
+    with pytest.raises(SystemExit) as exit_info:
+        cli.main(args)
+    assert exit_info.value.code == 2
