@@ -43,6 +43,38 @@ netscan --no-names           # skip name lookups (faster)
 netscan --help
 ```
 
+## Known devices
+
+Tell netscan which devices are yours, and it shows your names for them and flags everything else:
+
+```bash
+netscan --save-unknown       # adds every device it sees now to the list
+```
+
+This writes `~/.config/netscan/devices.toml`. Rename the devices to something you recognise:
+
+```toml
+[[device]]
+name = "Router"
+mac = "94:8f:cf:9a:25:89"
+
+[[device]]
+name = "Anna's phone"
+hostname = "Annas-iPhone"    # matches by name, for phones whose MAC changes
+```
+
+From then on a device that is not in the list stands out:
+
+```
+192.168.1.1    94:8f:cf:9a:25:89   Router           ARRIS Group, Inc.
+192.168.1.57   5e:11:22:33:44:55   Anna's phone     (random MAC)
+192.168.1.62   f2:aa:bb:cc:dd:ee   ?                (random MAC)   <-- unknown
+-----------------------------------------------------------------------------
+Other devices found: 3 (1 unknown)
+```
+
+Run `netscan --save-unknown` again to add new devices you trust. Use `--devices FILE` for a list somewhere else.
+
 Sending raw ARP packets needs root, so `netscan` re-runs itself through `sudo` and asks for your password when needed.
 
 Only scan networks you own or have permission to scan.

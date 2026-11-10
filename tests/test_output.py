@@ -1,4 +1,4 @@
-from netscan.output import GREEN, render_table
+from netscan.output import GREEN, YELLOW, render_table
 from netscan.scanner import Device
 
 DEVICES = [
@@ -36,3 +36,16 @@ def test_colors_only_when_asked():
 
 def test_empty_network():
     assert "Other devices found: 0" in render_table([])
+
+
+def test_unknown_devices_are_flagged_and_counted():
+    devices = [
+        Device(ip="192.168.0.1", mac="94:8f:cf:9a:25:89", label="Router", known=True),
+        Device(ip="192.168.0.20", mac="de:2e:0c:7e:16:c2", hostname="android-1", known=False),
+    ]
+    text = render_table(devices, color=True)
+
+    assert "Router" in text
+    assert YELLOW in lines_with(text, "192.168.0.20")[0]
+    assert "<-- unknown" in lines_with(text, "192.168.0.20")[0]
+    assert "Other devices found: 2 (1 unknown)" in text

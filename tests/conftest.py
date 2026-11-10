@@ -21,6 +21,14 @@ ROUTES = [
 ]
 
 
+@pytest.fixture(autouse=True)
+def config_home(tmp_path, monkeypatch):
+    """Keep tests away from the real ~/.config/netscan."""
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
+    monkeypatch.delenv("SUDO_USER", raising=False)
+    return tmp_path / "config"
+
+
 @pytest.fixture
 def home_network(monkeypatch):
     """Fake a home network: no root, no packets, two devices answering."""

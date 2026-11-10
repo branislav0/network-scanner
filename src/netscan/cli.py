@@ -6,8 +6,9 @@ import os
 import shutil
 import socket
 import sys
+from pathlib import Path
 
-from netscan import __version__, names, network, output, scanner, vendor
+from netscan import __version__, inventory, names, network, output, scanner, vendor
 
 
 class UsageError(Exception):
@@ -35,6 +36,18 @@ def build_parser():
         nargs="?",
         type=ipv4_range,
         help="network to scan, e.g. 192.168.1.0/24 (default: the network you are on)",
+    )
+    parser.add_argument(
+        "-d",
+        "--devices",
+        type=Path,
+        metavar="FILE",
+        help="known devices file (default: ~/.config/netscan/devices.toml)",
+    )
+    parser.add_argument(
+        "--save-unknown",
+        action="store_true",
+        help="add devices that are not known yet to the devices file",
     )
     parser.add_argument(
         "--no-names",
@@ -92,6 +105,35 @@ def add_this_computer(devices, target, iface, my_ip):
     return sorted([*devices, me], key=scanner.sort_key)
 
 
+def apply_known_devices(devices, path_arg, save_unknown):
+    """Label devices from the known devices file and optionally add new ones."""
+    path = path_arg or inventory.default_path()
+    others = [d for d in devices if not d.is_me]
+
+    if path.exists():
+        known = inventory.load(path)
+        for device in others:
+            entry = inventory.match(device, known)
+            device.known = entry is not None
+            device.label = entry.name if entry else None
+    elif path_arg and not save_unknown:
+        raise UsageError(f"devices file not found: {path}")
+
+    if not save_unknown:
+        return
+    new = [d for d in others if not d.known]
+    if not new:
+        print("No unknown devices to add.", file=sys.stderr)
+        return
+    added = inventory.append(path, new)
+    for device, entry in zip(new, added, strict=True):
+        device.known, device.label = True, entry.name
+    print(
+        f"Added {len(added)} device(s) to {path} - rename them to something you recognise.",
+        file=sys.stderr,
+    )
+
+
 def run(args):
     target, iface, my_ip = pick_target(args.range)
     print(f"Scanning {target} on {iface}...", file=sys.stderr)
@@ -106,6 +148,8 @@ def run(args):
     for device in devices:
         device.vendor = vendor.lookup_vendor(device.mac) if device.mac else None
 
+    apply_known_devices(devices, args.devices, args.save_unknown)
+
     color = not args.no_color and sys.stdout.isatty() and "NO_COLOR" not in os.environ
     print(output.render_table(devices, color=color))
     return 0
@@ -117,7 +161,7 @@ def main(argv=None):
     try:
         ensure_root(argv)
         return run(args)
-    except UsageError as error:
+    except (UsageError, inventory.InventoryError) as error:
         print(f"netscan: {error}", file=sys.stderr)
         return 1
     except KeyboardInterrupt:
