@@ -10,10 +10,11 @@ hostname = "Annas-iPhone"   # for phones whose MAC changes
 """
 
 import json
-import os
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
+
+from netscan import paths
 
 HEADER = """\
 # Devices netscan knows. Give them names you recognise - netscan shows the
@@ -42,22 +43,8 @@ def normalize_hostname(hostname):
     return hostname.strip().rstrip(".").split(".")[0].lower()
 
 
-def _sudo_user():
-    """The user who ran sudo, so the file lands in their home and not root's."""
-    if not hasattr(os, "geteuid") or os.geteuid() != 0:
-        return None
-    return os.environ.get("SUDO_USER") or None
-
-
 def default_path():
-    user = _sudo_user()
-    if user:
-        import pwd
-
-        config = Path(pwd.getpwnam(user).pw_dir) / ".config"
-    else:
-        config = Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config")
-    return config / "netscan" / "devices.toml"
+    return paths.config_dir() / "devices.toml"
 
 
 def load(path):
@@ -143,18 +130,5 @@ def append(path, devices):
 
     with open(path, "a", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
-    _give_back_to_sudo_user(path, created_dir)
+    paths.hand_to_sudo_user(path, *([path.parent] if created_dir else []))
     return added
-
-
-def _give_back_to_sudo_user(path, created_dir):
-    """Files written under sudo would belong to root; hand them to the real user."""
-    if not _sudo_user():
-        return
-    try:
-        uid, gid = int(os.environ["SUDO_UID"]), int(os.environ["SUDO_GID"])
-    except (KeyError, ValueError):
-        return
-    os.chown(path, uid, gid)
-    if created_dir:
-        os.chown(path.parent, uid, gid)

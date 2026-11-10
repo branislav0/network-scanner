@@ -1,3 +1,4 @@
+import os
 import re
 
 import pytest
@@ -112,7 +113,7 @@ class FakePasswd:
 
 
 def test_default_path_under_sudo_is_in_the_real_users_home(monkeypatch):
-    monkeypatch.setattr(inventory.os, "geteuid", lambda: 0, raising=False)
+    monkeypatch.setattr(os, "geteuid", lambda: 0, raising=False)
     monkeypatch.setenv("SUDO_USER", "anna")
     monkeypatch.setattr("pwd.getpwnam", lambda user: FakePasswd)
 
@@ -121,8 +122,8 @@ def test_default_path_under_sudo_is_in_the_real_users_home(monkeypatch):
 
 def test_files_written_under_sudo_belong_to_the_real_user(tmp_path, monkeypatch):
     owners = []
-    monkeypatch.setattr(inventory.os, "geteuid", lambda: 0, raising=False)
-    monkeypatch.setattr(inventory.os, "chown", lambda path, uid, gid: owners.append((uid, gid)))
+    monkeypatch.setattr(os, "geteuid", lambda: 0, raising=False)
+    monkeypatch.setattr(os, "chown", lambda path, uid, gid: owners.append((uid, gid)))
     monkeypatch.setenv("SUDO_USER", "anna")
     monkeypatch.setenv("SUDO_UID", "1000")
     monkeypatch.setenv("SUDO_GID", "1000")

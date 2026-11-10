@@ -62,6 +62,11 @@ def build_parser():
         help="seconds to wait for ARP replies (default: %(default)s)",
     )
     parser.add_argument("--no-color", action="store_true", help="plain output without colors")
+    parser.add_argument(
+        "--update-vendors",
+        action="store_true",
+        help="download the latest MAC vendor list and exit",
+    )
     parser.add_argument("-V", "--version", action="version", version=f"%(prog)s {__version__}")
     return parser
 
@@ -151,7 +156,19 @@ def run(args):
     apply_known_devices(devices, args.devices, args.save_unknown)
 
     color = not args.no_color and sys.stdout.isatty() and "NO_COLOR" not in os.environ
-    print(output.render_table(devices, color=color))
+    print(output.render_table(devices, color=color), flush=True)
+
+    if any(d.mac and not d.vendor for d in devices) and not vendor.has_database():
+        print(
+            "Tip: run `netscan --update-vendors` to look up vendors of newer devices.",
+            file=sys.stderr,
+        )
+    return 0
+
+
+def update_vendors():
+    count = vendor.update_database()
+    print(f"Saved {count} vendors to {vendor.database_path()}")
     return 0
 
 
@@ -159,9 +176,11 @@ def main(argv=None):
     argv = sys.argv[1:] if argv is None else list(argv)
     args = build_parser().parse_args(argv)
     try:
+        if args.update_vendors:
+            return update_vendors()  # no root needed
         ensure_root(argv)
         return run(args)
-    except (UsageError, inventory.InventoryError) as error:
+    except (UsageError, inventory.InventoryError, vendor.UpdateError) as error:
         print(f"netscan: {error}", file=sys.stderr)
         return 1
     except KeyboardInterrupt:

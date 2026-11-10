@@ -23,7 +23,7 @@ For every device it shows:
 
 - **IP and MAC address** – found with an ARP sweep, so it sees devices that ignore ping too.
 - **Name** – asked from the device itself via mDNS/Bonjour (Apple, Linux, printers) or NetBIOS (Windows), falling back to reverse DNS from your router or DNS server. `?` means the device did not tell its name – common for Android phones.
-- **Vendor** – looked up from the MAC address in an offline database. `(random MAC)` means the device uses a private, randomized address (modern phones do this per Wi-Fi network).
+- **Vendor** – looked up from the MAC address in an offline database. `(random MAC)` means the device uses a private, randomized address (modern phones do this per Wi-Fi network). Run `netscan --update-vendors` once to download Wireshark's current vendor list – the built-in one does not know newer devices such as the Raspberry Pi 5.
 
 ## Install
 
@@ -40,6 +40,7 @@ pipx install git+https://github.com/branislav0/network-scanner
 netscan                      # scan the network you are on
 netscan 192.168.1.0/24       # scan a specific range
 netscan --no-names           # skip name lookups (faster)
+netscan --update-vendors     # download the latest MAC vendor list (no root needed)
 netscan --help
 ```
 
