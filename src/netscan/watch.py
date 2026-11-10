@@ -10,6 +10,7 @@ from pathlib import Path
 
 from netscan import inventory, paths
 from netscan.scanner import Device
+from netscan.text import clean
 
 # How long a device may stay unseen before it counts as gone. Phones sleep
 # and skip ARP replies, so a single missed scan says nothing.
@@ -37,10 +38,12 @@ class Seen:
     def describe(self):
         """e.g. "192.168.0.20 de:2e:0c:7e:16:c2 Annas-iPhone (random MAC)"."""
         parts = [self.ip, self.mac]
-        if self.label or self.hostname:
-            parts.append(self.name)
-        if self.vendor:
-            parts.append(self.vendor if self.vendor.startswith("(") else f"({self.vendor})")
+        name = clean(self.label, limit=80) or clean(self.hostname)
+        if name:
+            parts.append(name)
+        vendor = clean(self.vendor, limit=80)
+        if vendor:
+            parts.append(vendor if vendor.startswith("(") else f"({vendor})")
         return " ".join(parts)
 
 
