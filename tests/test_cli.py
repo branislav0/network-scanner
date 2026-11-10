@@ -56,7 +56,7 @@ def test_offline_machine_asks_for_a_range(home_network, monkeypatch, capsys):
 
 def test_reruns_through_sudo_when_not_root(monkeypatch):
     calls = []
-    monkeypatch.setattr(cli.os, "geteuid", lambda: 1000, raising=False)
+    monkeypatch.setattr(cli, "can_send_raw", lambda: False)
     monkeypatch.setattr(cli.shutil, "which", lambda name: "/usr/bin/sudo")
     monkeypatch.setattr(cli.os, "execvp", lambda file, args: calls.append(args))
 
@@ -69,6 +69,29 @@ def test_root_runs_directly(monkeypatch):
     monkeypatch.setattr(cli.os, "geteuid", lambda: 0, raising=False)
     monkeypatch.setattr(cli.os, "execvp", lambda *a: pytest.fail("should not re-run"))
     cli.ensure_root([])
+
+
+class FakeSocket:
+    def close(self):
+        pass
+
+
+def test_a_user_with_the_net_raw_capability_needs_no_sudo(monkeypatch):
+    monkeypatch.setattr(cli.os, "geteuid", lambda: 1000, raising=False)
+    monkeypatch.setattr(cli.socket, "AF_PACKET", 17, raising=False)
+    monkeypatch.setattr(cli.socket, "socket", lambda *args: FakeSocket())
+    monkeypatch.setattr(cli.os, "execvp", lambda *a: pytest.fail("should not re-run"))
+    cli.ensure_root([])
+
+
+def test_a_user_without_the_capability_cannot_send_raw(monkeypatch):
+    def refuse(*args):
+        raise PermissionError("Operation not permitted")
+
+    monkeypatch.setattr(cli.os, "geteuid", lambda: 1000, raising=False)
+    monkeypatch.setattr(cli.socket, "AF_PACKET", 17, raising=False)
+    monkeypatch.setattr(cli.socket, "socket", refuse)
+    assert cli.can_send_raw() is False
 
 
 ROUTER = '[[device]]\nname = "Router"\nmac = "94:8f:cf:9a:25:89"\n'
