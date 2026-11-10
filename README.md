@@ -1,5 +1,7 @@
 # netscan
 
+[![CI](https://github.com/branislav0/network-scanner/actions/workflows/ci.yml/badge.svg)](https://github.com/branislav0/network-scanner/actions/workflows/ci.yml)
+
 See which devices are on your local network – with their names and vendors – in one command.
 
 ```
@@ -51,7 +53,10 @@ Only scan networks you own or have permission to scan.
 python3 -m venv .venv
 .venv/bin/pip install -e '.[dev]'
 .venv/bin/ruff check .
+.venv/bin/pytest
 ```
+
+The tests fake the network, so they need neither root nor a real LAN.
 
 ## License
 
