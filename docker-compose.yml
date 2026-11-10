@@ -6,8 +6,16 @@ services:
     container_name: netscan
     restart: unless-stopped
     network_mode: host # ARP needs the real network, not Docker's bridge
+    user: "1000:1000" # owner of ./data on the host (`id -u`:`id -g`)
+    # Only the one privilege netscan needs. no-new-privileges is left out on
+    # purpose: it would also block the NET_RAW capability set on Python.
+    cap_drop:
+      - ALL
     cap_add:
       - NET_RAW
+    read_only: true
+    tmpfs:
+      - /tmp
     volumes:
       - ./data:/data # devices.toml, vendor list and state
       - /etc/localtime:/etc/localtime:ro # log times in your time zone

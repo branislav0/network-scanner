@@ -120,7 +120,7 @@ docker compose up -d
 docker logs -f netscan
 ```
 
-The container uses the host network and the `NET_RAW` capability to send ARP packets. Everything it keeps is in `./data`:
+The container uses the host network to see your LAN. It runs as an ordinary user (uid 1000 – change `user:` if `./data` belongs to someone else) with a read-only filesystem and a single capability, `NET_RAW`, which the ARP sweep needs; without it netscan cannot start. Everything it keeps is in `./data`:
 
 | File | What |
 |---|---|

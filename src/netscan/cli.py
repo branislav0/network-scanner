@@ -125,9 +125,22 @@ def build_parser():
     return parser
 
 
+def can_send_raw():
+    """True for root, or on Linux with the NET_RAW capability (Docker, setcap)."""
+    if not hasattr(os, "geteuid") or os.geteuid() == 0:
+        return True
+    if not hasattr(socket, "AF_PACKET"):
+        return False
+    try:
+        socket.socket(socket.AF_PACKET, socket.SOCK_RAW).close()
+    except OSError:
+        return False
+    return True
+
+
 def ensure_root(argv):
     """Sending raw ARP packets needs root, so re-run through sudo when needed."""
-    if not hasattr(os, "geteuid") or os.geteuid() == 0:
+    if can_send_raw():
         return
     if shutil.which("sudo") is None:
         raise UsageError("sending ARP packets needs root, run netscan as root")
