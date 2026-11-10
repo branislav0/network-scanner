@@ -120,3 +120,31 @@ def test_vendor_names_are_cleaned():
     database = parse_manuf("88:A2:9E\tShort\tNice\x1b[2J Vendor\n11:22:33\tX\t\x1b\x07\n")
     assert database[24][0x88A29E] == "Nice[2J Vendor"
     assert 0x112233 not in database[24]
+
+
+def test_update_refuses_a_huge_download(monkeypatch):
+    monkeypatch.setattr(vendor, "MAX_DOWNLOAD", 100)
+    monkeypatch.setattr(
+        vendor.urllib.request, "urlopen", lambda request, timeout: FakeResponse(b"x" * 500)
+    )
+    with pytest.raises(vendor.UpdateError, match="suspiciously big"):
+        vendor.update_database()
+
+
+def test_update_refuses_a_decompression_bomb(monkeypatch):
+    monkeypatch.setattr(vendor, "MAX_UNPACKED", 10_000)
+    bomb = gzip.compress(b"0" * 1_000_000)  # 1 KB that unpacks to 1 MB
+    monkeypatch.setattr(
+        vendor.urllib.request, "urlopen", lambda request, timeout: FakeResponse(bomb)
+    )
+    with pytest.raises(vendor.UpdateError, match="suspiciously big"):
+        vendor.update_database()
+
+
+def test_update_refuses_a_cut_off_download(monkeypatch):
+    cut = gzip.compress(MANUF.encode() * 50)[:-20]
+    monkeypatch.setattr(
+        vendor.urllib.request, "urlopen", lambda request, timeout: FakeResponse(cut)
+    )
+    with pytest.raises(vendor.UpdateError):
+        vendor.update_database()
