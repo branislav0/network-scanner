@@ -50,7 +50,7 @@ def default_path():
 def load(path):
     """Read the known devices from path."""
     try:
-        with open(path, "rb") as f:
+        with paths.as_sudo_user(), open(path, "rb") as f:
             data = tomllib.load(f)
     except tomllib.TOMLDecodeError as error:
         raise InventoryError(f"{path}: {error}") from None
@@ -110,9 +110,12 @@ def _toml(value):
 def append(path, devices):
     """Add devices to the file and return what was written for each of them."""
     path = Path(path)
-    created_dir = not path.parent.exists()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    new_file = not path.exists() or path.stat().st_size == 0
+    try:
+        with paths.as_sudo_user():
+            path.parent.mkdir(parents=True, exist_ok=True)
+            new_file = not path.exists() or path.stat().st_size == 0
+    except OSError as error:
+        raise InventoryError(f"cannot write {path}: {error.strerror}") from None
 
     added = []
     lines = [HEADER.rstrip("\n")] if new_file else []
@@ -128,7 +131,9 @@ def append(path, devices):
             lines.append(f"hostname = {_toml(entry.hostname)}")
         added.append(entry)
 
-    with open(path, "a", encoding="utf-8") as f:
-        f.write("\n".join(lines) + "\n")
-    paths.hand_to_sudo_user(path, *([path.parent] if created_dir else []))
+    try:
+        with paths.as_sudo_user(), open(path, "a", encoding="utf-8") as f:
+            f.write("\n".join(lines) + "\n")
+    except OSError as error:
+        raise InventoryError(f"cannot write {path}: {error.strerror}") from None
     return added

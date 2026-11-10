@@ -62,7 +62,7 @@ def test_reruns_through_sudo_when_not_root(monkeypatch):
 
     cli.ensure_root(["-t", "3"])
 
-    assert calls == [["sudo", sys.executable, "-m", "netscan", "-t", "3"]]
+    assert calls == [["sudo", sys.executable, "-I", "-m", "netscan", "-t", "3"]]
 
 
 def test_root_runs_directly(monkeypatch):

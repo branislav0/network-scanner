@@ -63,20 +63,21 @@ class State:
     def load(cls, path):
         """Read the state; a missing or broken file starts from scratch."""
         try:
-            data = json.loads(Path(path).read_text(encoding="utf-8"))
+            with paths.as_sudo_user():
+                text = Path(path).read_text(encoding="utf-8")
+            data = json.loads(text)
             return cls({mac: Seen(**record) for mac, record in data["devices"].items()})
         except (OSError, ValueError, KeyError, TypeError, AttributeError):
             return cls()
 
     def save(self, path):
         path = Path(path)
-        created_dir = not path.parent.exists()
-        path.parent.mkdir(parents=True, exist_ok=True)
         data = {"devices": {mac: asdict(seen) for mac, seen in self.devices.items()}}
-        partial = path.with_suffix(".tmp")
-        partial.write_text(json.dumps(data, indent=2), encoding="utf-8")
-        os.replace(partial, path)
-        paths.hand_to_sudo_user(path, *([path.parent] if created_dir else []))
+        with paths.as_sudo_user():
+            path.parent.mkdir(parents=True, exist_ok=True)
+            partial = path.with_suffix(".tmp")
+            partial.write_text(json.dumps(data, indent=2), encoding="utf-8")
+            os.replace(partial, path)
 
     def present(self):
         return sorted(

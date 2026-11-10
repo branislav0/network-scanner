@@ -5,6 +5,7 @@ Set NETSCAN_HOME to keep everything in one directory (the Docker image uses
 """
 
 import os
+from contextlib import contextmanager
 from pathlib import Path
 
 
@@ -44,13 +45,32 @@ def state_dir():
     return _user_dir("XDG_STATE_HOME", ".local/state")
 
 
-def hand_to_sudo_user(*paths):
-    """Files written under sudo would belong to root; give them to the real user."""
+def _sudo_ids():
     if not sudo_user():
-        return
+        return None
     try:
-        uid, gid = int(os.environ["SUDO_UID"]), int(os.environ["SUDO_GID"])
+        return int(os.environ["SUDO_UID"]), int(os.environ["SUDO_GID"])
     except (KeyError, ValueError):
+        return None
+
+
+@contextmanager
+def as_sudo_user():
+    """Touch the user's files with the user's rights, not root's.
+
+    Under sudo, root following a symlink planted in the user's home could
+    otherwise overwrite any file on the system. New files also end up owned
+    by the user this way.
+    """
+    ids = _sudo_ids()
+    if ids is None:
+        yield
         return
-    for path in paths:
-        os.chown(path, uid, gid)
+    uid, gid = ids
+    os.setegid(gid)
+    os.seteuid(uid)
+    try:
+        yield
+    finally:
+        os.seteuid(0)
+        os.setegid(0)
