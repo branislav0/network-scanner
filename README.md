@@ -1,46 +1,58 @@
-# Network Scanner
+# netscan
 
-Simple ARP network scanner built on top of [Scapy](https://scapy.net) for discovering active devices in a local subnet.
+See which devices are on your local network – with their names and vendors – in one command.
+
+```
+$ netscan
+Scanning 192.168.1.0/24 on wlan0...
+-----------------------------------------------------------------------------------------
+IP Address     MAC Address         Name                 Vendor
+-----------------------------------------------------------------------------------------
+192.168.1.1    aa:bb:cc:dd:ee:01   router.lan           ARRIS Group, Inc.
+192.168.1.23   aa:bb:cc:dd:ee:17   my-laptop            Intel Corporate   <-- this computer
+192.168.1.40   dc:a6:32:00:00:28   raspberrypi.local    Raspberry Pi Trading Ltd
+192.168.1.57   5e:11:22:33:44:55   Johns-iPhone.local   (random MAC)
+192.168.1.62   f2:aa:bb:cc:dd:ee   ?                    (random MAC)
+-----------------------------------------------------------------------------------------
+Other devices found: 4
+```
 
 For every device it shows:
 
-- **IP and MAC address**
+- **IP and MAC address** – found with an ARP sweep, so it sees devices that ignore ping too.
 - **Name** – asked from the device itself via mDNS/Bonjour (Apple, Linux, printers) or NetBIOS (Windows), falling back to reverse DNS from your router or DNS server. `?` means the device did not tell its name – common for Android phones.
-- **Vendor** – looked up from the MAC address in Scapy's offline database. `(random MAC)` means the device uses a private, randomized address (modern phones do this per Wi-Fi network).
-
-Your own machine is listed with its real MAC address and highlighted, but not counted among the found devices.
+- **Vendor** – looked up from the MAC address in an offline database. `(random MAC)` means the device uses a private, randomized address (modern phones do this per Wi-Fi network).
 
 ## Install
 
-```bash
-python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
-```
-
-## Run
-
-Sending raw ARP packets needs root privileges:
+Needs Python 3.11+ on Linux or macOS. With [pipx](https://pipx.pypa.io):
 
 ```bash
-sudo .venv/bin/python arp_scanner.py 192.168.1.0/24
+sudo apt install pipx        # Debian, Ubuntu, Mint, Raspberry Pi OS
+pipx install git+https://github.com/branislav0/network-scanner
 ```
 
-Replace `192.168.1.0/24` with your own network range – you can find it with `ip addr` (Linux) or `ipconfig` (Windows).
+## Usage
 
-## Example output
+```bash
+netscan                      # scan the network you are on
+netscan 192.168.1.0/24       # scan a specific range
+netscan --no-names           # skip name lookups (faster)
+netscan --help
+```
 
-```
-----------------------------------------------------------------------------------------------------
-IP Address       MAC Address         Name                               Vendor
-----------------------------------------------------------------------------------------------------
-192.168.1.1      aa:bb:cc:dd:ee:01   router.local                       ARRIS Group, Inc.
-192.168.1.23     aa:bb:cc:dd:ee:17   my-laptop                          ?   <-- My IP
-192.168.1.40     aa:bb:cc:dd:ee:28   raspberrypi.local                  Raspberry Pi Trading Ltd
-192.168.1.57     5e:11:22:33:44:55   Johns-iPhone.local                 (random MAC)
-192.168.1.62     f2:aa:bb:cc:dd:ee   ?                                  (random MAC)
-----------------------------------------------------------------------------------------------------
-Other devices found: 4
-Your IP identified as: 192.168.1.23
-```
+Sending raw ARP packets needs root, so `netscan` re-runs itself through `sudo` and asks for your password when needed.
 
 Only scan networks you own or have permission to scan.
+
+## Development
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -e '.[dev]'
+.venv/bin/ruff check .
+```
+
+## License
+
+MIT

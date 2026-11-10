@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "netscan-cli"
+dynamic = ["version"]
+description = "List the devices on your local network with their names and vendors"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "branislav0" }]
+requires-python = ">=3.11"
+dependencies = ["scapy>=2.5"]
+keywords = ["network", "scanner", "arp", "lan", "home-network", "raspberry-pi"]
+classifiers = [
+    "Environment :: Console",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Topic :: System :: Networking :: Monitoring",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[project.scripts]
+netscan = "netscan.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/branislav0/network-scanner"
+Issues = "https://github.com/branislav0/network-scanner/issues"
+
+[tool.setuptools.dynamic]
+version = { attr = "netscan.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
