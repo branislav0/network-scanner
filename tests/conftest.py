@@ -27,6 +27,9 @@ def config_home(tmp_path, monkeypatch):
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
     monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path / "cache"))
     monkeypatch.delenv("SUDO_USER", raising=False)
+    monkeypatch.delenv("NETSCAN_HOME", raising=False)
+    monkeypatch.delenv("NETSCAN_PUSH_URL", raising=False)
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "state"))
     monkeypatch.setattr(vendor, "_database", None)
     return tmp_path / "config"
 
