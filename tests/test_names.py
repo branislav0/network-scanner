@@ -66,3 +66,13 @@ def test_resolve_names_maps_every_address(monkeypatch):
 
 def test_resolve_names_of_nothing():
     assert names.resolve_names([]) == {}
+
+
+def test_names_from_the_network_are_cleaned():
+    methods = (lambda ip: "\x1b[31mtv\x1b[0m\n",)
+    assert resolve_name("192.168.0.9", methods) == "[31mtv[0m"
+
+
+def test_a_name_of_only_control_characters_falls_through():
+    methods = (lambda ip: "\x1b\x07", lambda ip: "from-dns")
+    assert resolve_name("192.168.0.9", methods) == "from-dns"

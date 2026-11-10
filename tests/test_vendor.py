@@ -114,3 +114,9 @@ def test_update_reports_a_corrupt_download(monkeypatch):
     )
     with pytest.raises(vendor.UpdateError):
         vendor.update_database()
+
+
+def test_vendor_names_are_cleaned():
+    database = parse_manuf("88:A2:9E\tShort\tNice\x1b[2J Vendor\n11:22:33\tX\t\x1b\x07\n")
+    assert database[24][0x88A29E] == "Nice[2J Vendor"
+    assert 0x112233 not in database[24]

@@ -1,5 +1,7 @@
 """Printing the scan result."""
 
+from netscan.text import clean
+
 GREEN = "\033[92m"
 YELLOW = "\033[93m"
 RESET = "\033[0m"
@@ -8,8 +10,8 @@ HEADERS = ("IP Address", "MAC Address", "Name", "Vendor")
 
 
 def _row(device):
-    name = device.label or device.hostname or "?"
-    return (device.ip, device.mac or "?", name, device.vendor or "?")
+    name = clean(device.label, limit=80) or clean(device.hostname) or "?"
+    return (device.ip, device.mac or "?", name, clean(device.vendor, limit=80) or "?")
 
 
 def _note(device):

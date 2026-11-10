@@ -64,7 +64,7 @@ mac = "94:8f:cf:9a:25:89"
 
 [[device]]
 name = "Anna's phone"
-hostname = "Annas-iPhone"    # matches by name, for phones whose MAC changes
+hostname = "Annas-iPhone"    # no mac: matches by name, for phones whose MAC changes
 ```
 
 From then on a device that is not in the list stands out:
@@ -76,6 +76,8 @@ From then on a device that is not in the list stands out:
 -----------------------------------------------------------------------------
 Other devices found: 3 (1 unknown)
 ```
+
+Entries with a `mac` match only by MAC. Matching by `hostname` works only for entries without a `mac`, because any device can pick any name – use it just for phones whose MAC changes.
 
 Run `netscan --save-unknown` again to add new devices you trust. Use `--devices FILE` for a list somewhere else.
 

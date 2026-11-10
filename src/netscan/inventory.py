@@ -19,7 +19,8 @@ from netscan import paths
 HEADER = """\
 # Devices netscan knows. Give them names you recognise - netscan shows the
 # name instead of the hostname and highlights every device that is not here.
-# A device matches by mac, or by hostname for phones with a changing MAC.
+# A device matches by mac. An entry with only a hostname (no mac) matches by
+# name - handy for phones whose MAC changes, but any device can claim a name.
 """
 
 
@@ -81,7 +82,12 @@ def load(path):
 
 
 def match(device, known):
-    """Return the known device for a scanned one: by MAC first, then by hostname."""
+    """Return the known device for a scanned one.
+
+    Devices match by MAC. Only entries without a MAC match by hostname: any
+    device can call itself "Annas-iPhone", so a name alone must not vouch for
+    a device that was saved with its MAC.
+    """
     mac = normalize_mac(device.mac) if device.mac else None
     for entry in known:
         if mac and entry.mac == mac:
@@ -89,7 +95,7 @@ def match(device, known):
     if device.hostname:
         hostname = normalize_hostname(device.hostname)
         for entry in known:
-            if entry.hostname and normalize_hostname(entry.hostname) == hostname:
+            if not entry.mac and entry.hostname and normalize_hostname(entry.hostname) == hostname:
                 return entry
     return None
 

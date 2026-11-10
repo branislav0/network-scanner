@@ -14,6 +14,7 @@ import zlib
 from scapy.all import conf
 
 from netscan import paths
+from netscan.text import clean
 
 RANDOM_MAC = "(random MAC)"
 MANUF_URL = "https://www.wireshark.org/download/automated/data/manuf.gz"
@@ -57,8 +58,9 @@ def parse_manuf(text):
             bits = int(bits) if bits else 24
         except ValueError:
             continue
-        name = fields[2] if len(fields) > 2 and fields[2] else fields[1]
-        database.setdefault(bits, {})[value >> (48 - bits)] = name
+        name = clean(fields[2] if len(fields) > 2 and fields[2] else fields[1], limit=80)
+        if name:
+            database.setdefault(bits, {})[value >> (48 - bits)] = name
     return database
 
 

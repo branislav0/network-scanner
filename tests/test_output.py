@@ -49,3 +49,15 @@ def test_unknown_devices_are_flagged_and_counted():
     assert YELLOW in lines_with(text, "192.168.0.20")[0]
     assert "<-- unknown" in lines_with(text, "192.168.0.20")[0]
     assert "Other devices found: 2 (1 unknown)" in text
+
+
+def test_escape_sequences_never_reach_the_terminal():
+    device = Device(
+        ip="192.168.0.66",
+        mac="02:66:66:66:66:66",
+        hostname="tv\x1b]0;pwned\x07\x1b[2J",
+        vendor="Evil\x1b[8m Corp",
+        known=False,
+    )
+    text = render_table([device])
+    assert "\x1b" not in text and "\x07" not in text

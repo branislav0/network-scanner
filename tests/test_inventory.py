@@ -151,3 +151,9 @@ def test_unwritable_file_is_a_clear_error(tmp_path):
             append(folder / "devices.toml", [Device(ip="192.168.0.9", mac="aa:aa:aa:aa:aa:aa")])
     finally:
         folder.chmod(0o700)
+
+
+def test_a_hostname_does_not_vouch_for_a_device_saved_with_its_mac():
+    known = [KnownDevice(name="Laptop", mac="8c:8b:5b:76:f2:df", hostname="laptop")]
+    impostor = Device(ip="192.168.0.66", mac="02:66:66:66:66:66", hostname="laptop.local")
+    assert match(impostor, known) is None

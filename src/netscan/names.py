@@ -7,6 +7,8 @@ from concurrent.futures import ThreadPoolExecutor
 
 from scapy.all import DNS, DNSQR
 
+from netscan.text import clean
+
 TIMEOUT = 1.0
 
 # NetBIOS node status request for the name "*" ("CK" followed by 30 x "A")
@@ -95,7 +97,7 @@ METHODS = (name_from_mdns, name_from_netbios, name_from_dns)
 def resolve_name(ip, methods=METHODS):
     """Prefer the name a device gave itself, then the one from DNS."""
     for method in methods:
-        name = method(ip)
+        name = clean(method(ip))
         if name:
             return name
     return None
