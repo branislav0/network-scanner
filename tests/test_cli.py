@@ -248,3 +248,17 @@ def test_invalid_watch_options(args):
     with pytest.raises(SystemExit) as exit_info:
         cli.main(args)
     assert exit_info.value.code == 2
+
+
+@pytest.mark.parametrize("url", ["file:///etc/shadow", "kuma:3001/api/push/x", "ftp://kuma/x"])
+def test_push_url_must_be_http(url, monkeypatch):
+    with pytest.raises(SystemExit) as exit_info:
+        cli.main(["--watch", "60", "--push-url", url])
+    assert exit_info.value.code == 2
+
+
+def test_push_url_from_the_environment_is_checked_too(monkeypatch):
+    monkeypatch.setenv("NETSCAN_PUSH_URL", "file:///etc/shadow")
+    with pytest.raises(SystemExit) as exit_info:
+        cli.main(["--watch", "60"])
+    assert exit_info.value.code == 2

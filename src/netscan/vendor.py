@@ -5,7 +5,6 @@ shows up as "?"). `netscan --update-vendors` downloads Wireshark's current list
 into the cache, and lookups prefer it when it is there.
 """
 
-import gzip
 import os
 import time
 import urllib.request
@@ -18,6 +17,10 @@ from netscan.text import clean
 
 RANDOM_MAC = "(random MAC)"
 MANUF_URL = "https://www.wireshark.org/download/automated/data/manuf.gz"
+# Today the list is ~0.8 MB compressed and ~3 MB unpacked; refuse anything far
+# bigger instead of filling the memory of a small Raspberry Pi.
+MAX_DOWNLOAD = 16 * 1024 * 1024
+MAX_UNPACKED = 64 * 1024 * 1024
 
 _database = None  # {prefix bits: {prefix value: vendor}}, loaded on first use
 
@@ -120,13 +123,27 @@ def lookup_vendor(mac):
     return _lookup_downloaded(mac) or _lookup_scapy(mac)
 
 
+def _gunzip(packed):
+    """Unpack gzip data with size limits on both sides."""
+    if len(packed) > MAX_DOWNLOAD:
+        raise UpdateError("the downloaded vendor list is suspiciously big, keeping the old one")
+    unpacker = zlib.decompressobj(wbits=zlib.MAX_WBITS | 16)
+    data = unpacker.decompress(packed, MAX_UNPACKED + 1)
+    if len(data) > MAX_UNPACKED or unpacker.unconsumed_tail:
+        raise UpdateError("the downloaded vendor list is suspiciously big, keeping the old one")
+    if not unpacker.eof:
+        raise UpdateError("the downloaded vendor list is cut off, keeping the old one")
+    return data
+
+
 def update_database(url=MANUF_URL, timeout=30):
     """Download the vendor list into the cache and return how many vendors it has."""
     global _database
     request = urllib.request.Request(url, headers={"User-Agent": "netscan"})
     try:
         with urllib.request.urlopen(request, timeout=timeout) as response:
-            text = gzip.decompress(response.read()).decode("utf-8")
+            packed = response.read(MAX_DOWNLOAD + 1)
+        text = _gunzip(packed).decode("utf-8")
     except (OSError, EOFError, zlib.error, UnicodeDecodeError) as error:
         raise UpdateError(f"could not download the vendor list: {error}") from None
 

@@ -8,6 +8,7 @@ import signal
 import socket
 import sys
 import time
+import urllib.parse
 from pathlib import Path
 
 from netscan import __version__, inventory, names, network, output, scanner, vendor, watch
@@ -39,6 +40,14 @@ def interval(text):
     if seconds < 30:
         raise argparse.ArgumentTypeError("scan at most every 30 seconds")
     return seconds
+
+
+def push_url(text):
+    """argparse type: an http(s) URL, so a typo cannot point urllib at a file."""
+    parts = urllib.parse.urlsplit(text)
+    if parts.scheme not in ("http", "https") or not parts.netloc:
+        raise argparse.ArgumentTypeError(f"not an http(s) URL: {text}")
+    return text
 
 
 def build_parser():
@@ -107,6 +116,7 @@ def build_parser():
     )
     watching.add_argument(
         "--push-url",
+        type=push_url,
         default=os.environ.get("NETSCAN_PUSH_URL") or None,
         metavar="URL",
         help="Uptime Kuma push URL: down while unknown devices are on the network "
