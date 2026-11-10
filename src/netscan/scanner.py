@@ -17,6 +17,8 @@ class Device:
     hostname: str | None = None
     vendor: str | None = None
     is_me: bool = False
+    label: str | None = None  # name from the known devices file
+    known: bool | None = None  # None when there is no known devices file
 
 
 def sort_key(device):

@@ -69,3 +69,60 @@ def test_root_runs_directly(monkeypatch):
     monkeypatch.setattr(cli.os, "geteuid", lambda: 0, raising=False)
     monkeypatch.setattr(cli.os, "execvp", lambda *a: pytest.fail("should not re-run"))
     cli.ensure_root([])
+
+
+ROUTER = '[[device]]\nname = "Router"\nmac = "94:8f:cf:9a:25:89"\n'
+
+
+def test_known_devices_get_their_names_and_strangers_are_flagged(home_network, tmp_path, capsys):
+    devices = tmp_path / "devices.toml"
+    devices.write_text(ROUTER)
+
+    assert cli.main(["--devices", str(devices)]) == 0
+    out = capsys.readouterr().out
+
+    router = next(line for line in out.splitlines() if "192.168.0.1 " in line)
+    stranger = next(line for line in out.splitlines() if "192.168.0.20" in line)
+    assert "Router" in router and "unknown" not in router
+    assert stranger.endswith("<-- unknown")
+    assert "Other devices found: 2 (1 unknown)" in out
+
+
+def test_without_a_devices_file_nothing_is_flagged(home_network, capsys):
+    assert cli.main([]) == 0
+    out = capsys.readouterr().out
+    assert "unknown" not in out.replace("(random MAC)", "")
+
+
+def test_save_unknown_adds_strangers_to_the_default_file(home_network, config_home, capsys):
+    assert cli.main(["--save-unknown"]) == 0
+    _, err = capsys.readouterr()
+
+    saved = config_home / "netscan" / "devices.toml"
+    assert "Added 2 device(s)" in err
+    assert "router.lan" in saved.read_text()
+
+    assert cli.main([]) == 0
+    out = capsys.readouterr().out
+    assert "Other devices found: 2 (0 unknown)" in out
+
+
+def test_save_unknown_with_nothing_new(home_network, tmp_path, capsys):
+    devices = tmp_path / "devices.toml"
+    devices.write_text(ROUTER + '\n[[device]]\nname = "Phone"\nmac = "de:2e:0c:7e:16:c2"\n')
+
+    assert cli.main(["--devices", str(devices), "--save-unknown"]) == 0
+    assert "No unknown devices to add" in capsys.readouterr().err
+
+
+def test_missing_devices_file_is_an_error(home_network, tmp_path, capsys):
+    assert cli.main(["--devices", str(tmp_path / "nope.toml")]) == 1
+    assert "devices file not found" in capsys.readouterr().err
+
+
+def test_broken_devices_file_is_an_error(home_network, tmp_path, capsys):
+    devices = tmp_path / "devices.toml"
+    devices.write_text("[[device]\n")
+
+    assert cli.main(["--devices", str(devices)]) == 1
+    assert "devices.toml" in capsys.readouterr().err
