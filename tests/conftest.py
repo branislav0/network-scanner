@@ -2,7 +2,7 @@ import ipaddress
 
 import pytest
 
-from netscan import cli, names, network, scanner
+from netscan import cli, names, network, scanner, vendor
 from netscan.scanner import Device
 
 
@@ -23,9 +23,11 @@ ROUTES = [
 
 @pytest.fixture(autouse=True)
 def config_home(tmp_path, monkeypatch):
-    """Keep tests away from the real ~/.config/netscan."""
+    """Keep tests away from the real ~/.config/netscan and ~/.cache/netscan."""
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
+    monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path / "cache"))
     monkeypatch.delenv("SUDO_USER", raising=False)
+    monkeypatch.setattr(vendor, "_database", None)
     return tmp_path / "config"
 
 

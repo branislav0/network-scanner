@@ -3,7 +3,7 @@ from ipaddress import IPv4Network
 
 import pytest
 
-from netscan import cli, names, network
+from netscan import cli, names, network, vendor
 
 
 def test_scans_the_network_we_are_on(home_network, capsys):
@@ -126,3 +126,26 @@ def test_broken_devices_file_is_an_error(home_network, tmp_path, capsys):
 
     assert cli.main(["--devices", str(devices)]) == 1
     assert "devices.toml" in capsys.readouterr().err
+
+
+def test_update_vendors_needs_no_root(monkeypatch, capsys):
+    monkeypatch.setattr(cli, "ensure_root", lambda argv: pytest.fail("no root needed"))
+    monkeypatch.setattr(vendor, "update_database", lambda: 58765)
+
+    assert cli.main(["--update-vendors"]) == 0
+    assert "Saved 58765 vendors" in capsys.readouterr().out
+
+
+def test_failed_vendor_update_is_an_error(monkeypatch, capsys):
+    def offline():
+        raise vendor.UpdateError("could not download the vendor list: offline")
+
+    monkeypatch.setattr(vendor, "update_database", offline)
+    assert cli.main(["--update-vendors"]) == 1
+    assert "could not download" in capsys.readouterr().err
+
+
+def test_suggests_updating_vendors_when_some_are_unknown(home_network, monkeypatch, capsys):
+    monkeypatch.setattr(vendor, "lookup_vendor", lambda mac: None)
+    assert cli.main([]) == 0
+    assert "netscan --update-vendors" in capsys.readouterr().err
