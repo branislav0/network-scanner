@@ -1,0 +1,17 @@
+# netscan watching your home network. Linux only: Docker Desktop on macOS and
+# Windows runs containers in a VM that cannot see your LAN.
+services:
+  netscan:
+    image: ghcr.io/branislav0/network-scanner:latest
+    container_name: netscan
+    restart: unless-stopped
+    network_mode: host # ARP needs the real network, not Docker's bridge
+    cap_add:
+      - NET_RAW
+    volumes:
+      - ./data:/data # devices.toml, vendor list and state
+      - /etc/localtime:/etc/localtime:ro # log times in your time zone
+    environment:
+      # Optional: Uptime Kuma push URL, down while unknown devices are around
+      - NETSCAN_PUSH_URL=${NETSCAN_PUSH_URL:-}
+    command: ["--watch", "300"]
