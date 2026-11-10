@@ -136,6 +136,18 @@ docker exec netscan netscan --save-unknown
 
 Only scan networks you own or have permission to scan.
 
+## Security
+
+**What netscan sends:** ARP requests to every address in the range, mDNS/NetBIOS name queries to the devices that answered, and reverse DNS lookups to your resolver. With `--update-vendors` (and weekly in watch mode) it downloads the vendor list from wireshark.org over HTTPS; with `--push-url` it calls your Uptime Kuma. Nothing else leaves your machine.
+
+**What it stores:** `devices.toml`, `state.json` and the vendor list – MAC addresses and names of your devices, kept locally only.
+
+**Privileges:** the sudo re-run starts Python in isolated mode and touches your files with your rights, not root's. The Docker image runs as an ordinary user with only the `NET_RAW` capability. Names that devices report are untrusted input and are stripped of control characters before they reach your terminal, logs or alerts.
+
+**Limits:** netscan sees devices that behave normally. Someone who clones the MAC of a known device or never answers ARP will not stand out – treat it as an early warning, not as intrusion detection.
+
+Found a vulnerability? See [SECURITY.md](SECURITY.md).
+
 ## Development
 
 ```bash
