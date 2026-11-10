@@ -14,3 +14,7 @@ venv/
 .idea/
 *.iml
 .vscode/
+
+# Docker: secrets and the data of a local run
+.env
+data/
