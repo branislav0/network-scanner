@@ -66,7 +66,9 @@ def _load_database():
     global _database
     if _database is None:
         try:
-            _database = parse_manuf(database_path().read_text(encoding="utf-8"))
+            with paths.as_sudo_user():
+                text = database_path().read_text(encoding="utf-8")
+            _database = parse_manuf(text)
         except OSError:
             _database = {}
     return _database
@@ -75,7 +77,9 @@ def _load_database():
 def database_is_fresh(max_age=7 * 24 * 3600):
     """True when a downloaded vendor list exists and is younger than max_age seconds."""
     try:
-        return time.time() - database_path().stat().st_mtime < max_age
+        with paths.as_sudo_user():
+            modified = database_path().stat().st_mtime
+        return time.time() - modified < max_age
     except OSError:
         return False
 
@@ -130,11 +134,10 @@ def update_database(url=MANUF_URL, timeout=30):
         raise UpdateError("the downloaded vendor list looks broken, keeping the old one")
 
     path = database_path()
-    created_dir = not path.parent.exists()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    partial = path.with_suffix(".tmp")
-    partial.write_text(text, encoding="utf-8")
-    os.replace(partial, path)
-    paths.hand_to_sudo_user(path, *([path.parent] if created_dir else []))
+    with paths.as_sudo_user():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        partial = path.with_suffix(".tmp")
+        partial.write_text(text, encoding="utf-8")
+        os.replace(partial, path)
     _database = database
     return count

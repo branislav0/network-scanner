@@ -120,16 +120,34 @@ def test_default_path_under_sudo_is_in_the_real_users_home(monkeypatch):
     assert str(inventory.default_path()) == "/home/anna/.config/netscan/devices.toml"
 
 
-def test_files_written_under_sudo_belong_to_the_real_user(tmp_path, monkeypatch):
-    owners = []
+def test_files_are_written_with_the_real_users_rights_under_sudo(tmp_path, monkeypatch):
+    calls = []
     monkeypatch.setattr(os, "geteuid", lambda: 0, raising=False)
-    monkeypatch.setattr(os, "chown", lambda path, uid, gid: owners.append((uid, gid)))
+    monkeypatch.setattr(os, "seteuid", lambda uid: calls.append(("uid", uid)), raising=False)
+    monkeypatch.setattr(os, "setegid", lambda gid: calls.append(("gid", gid)), raising=False)
     monkeypatch.setenv("SUDO_USER", "anna")
     monkeypatch.setenv("SUDO_UID", "1000")
-    monkeypatch.setenv("SUDO_GID", "1000")
+    monkeypatch.setenv("SUDO_GID", "1001")
 
-    append(
-        tmp_path / "new-dir" / "devices.toml", [Device(ip="192.168.0.9", mac="aa:aa:aa:aa:aa:aa")]
-    )
+    device = Device(ip="192.168.0.9", mac="aa:aa:aa:aa:aa:aa")
+    append(tmp_path / "new-dir" / "devices.toml", [device])
 
-    assert owners == [(1000, 1000), (1000, 1000)]  # the file and the new directory
+    # every file access drops to the user and comes back to root
+    assert calls[:4] == [("gid", 1001), ("uid", 1000), ("uid", 0), ("gid", 0)]
+    assert len(calls) % 4 == 0
+
+
+def test_without_sudo_rights_are_left_alone(tmp_path, monkeypatch):
+    monkeypatch.setattr(os, "seteuid", lambda uid: pytest.fail("no sudo, no switching"))
+    append(tmp_path / "devices.toml", [Device(ip="192.168.0.9", mac="aa:aa:aa:aa:aa:aa")])
+
+
+def test_unwritable_file_is_a_clear_error(tmp_path):
+    folder = tmp_path / "locked"
+    folder.mkdir()
+    folder.chmod(0o500)
+    try:
+        with pytest.raises(InventoryError, match="cannot write"):
+            append(folder / "devices.toml", [Device(ip="192.168.0.9", mac="aa:aa:aa:aa:aa:aa")])
+    finally:
+        folder.chmod(0o700)

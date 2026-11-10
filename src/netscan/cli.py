@@ -123,7 +123,8 @@ def ensure_root(argv):
         raise UsageError("sending ARP packets needs root, run netscan as root")
     print("netscan needs root to send ARP packets, re-running with sudo...", file=sys.stderr)
     sys.stderr.flush()
-    os.execvp("sudo", ["sudo", sys.executable, "-m", "netscan", *argv])
+    # -I: as root, never import code from the current directory or PYTHON* variables
+    os.execvp("sudo", ["sudo", sys.executable, "-I", "-m", "netscan", *argv])
 
 
 def pick_target(target):
@@ -265,7 +266,10 @@ def run_watch(args):
 
         if args.push_url and not watch.push_status(args.push_url, state):
             log("Could not reach the push URL")
-        state.save(state_path)
+        try:
+            state.save(state_path)
+        except OSError as error:
+            log(f"Could not save {state_path}: {error.strerror}")
         time.sleep(args.watch)
 
 
