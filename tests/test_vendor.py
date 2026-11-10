@@ -8,7 +8,7 @@ from netscan import vendor
 from netscan.vendor import RANDOM_MAC, is_random_mac, lookup_vendor, parse_manuf
 
 
-@pytest.mark.parametrize("mac", ["5e:11:22:33:44:55", "f2:aa:bb:cc:dd:ee", "de:2e:0c:7e:16:c2"])
+@pytest.mark.parametrize("mac", ["5e:11:22:33:44:55", "f2:aa:bb:cc:dd:ee", "02:00:00:00:00:20"])
 def test_private_macs_are_reported_as_random(mac):
     assert is_random_mac(mac)
     assert lookup_vendor(mac) == RANDOM_MAC
@@ -63,7 +63,7 @@ def test_downloaded_list_wins_and_the_most_specific_block_is_used(config_home, m
     path.parent.mkdir(parents=True)
     path.write_text(MANUF)
 
-    assert lookup_vendor("88:a2:9e:24:92:30") == "Raspberry Pi (Trading) Ltd"
+    assert lookup_vendor("88:a2:9e:00:00:48") == "Raspberry Pi (Trading) Ltd"
     assert lookup_vendor("00:55:da:1f:00:01") == "KoolPOS Inc."
     assert lookup_vendor("00:55:da:20:00:01") == "Shinko Technos co.,ltd."
     assert lookup_vendor("00:1b:c5:00:1a:bc") == "OpenRB.com, Direct SIA"

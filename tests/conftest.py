@@ -12,7 +12,7 @@ def ip(text):
 
 # Scapy routing table of a laptop on Wi-Fi with Tailscale running
 ROUTES = [
-    (ip("100.110.80.26"), 0xFFFFFFFF, "0.0.0.0", "tailscale0", "100.110.80.26", 0),
+    (ip("100.64.0.1"), 0xFFFFFFFF, "0.0.0.0", "tailscale0", "100.64.0.1", 0),
     (ip("127.0.0.0"), ip("255.0.0.0"), "0.0.0.0", "lo", "127.0.0.1", 0),
     (0, 0, "192.168.0.1", "wlan0", "192.168.0.5", 600),
     (ip("192.168.0.0"), ip("255.255.255.0"), "0.0.0.0", "wlan0", "192.168.0.5", 600),
@@ -42,14 +42,14 @@ def home_network(monkeypatch):
     def fake_scan(target, iface, timeout):
         calls.update(target=target, iface=iface, timeout=timeout)
         return [
-            Device(ip="192.168.0.1", mac="94:8f:cf:9a:25:89"),
-            Device(ip="192.168.0.20", mac="de:2e:0c:7e:16:c2"),
+            Device(ip="192.168.0.1", mac="00:00:5e:00:53:01"),
+            Device(ip="192.168.0.20", mac="02:00:00:00:00:20"),
         ]
 
     monkeypatch.setattr(cli, "ensure_root", lambda argv: None)
     monkeypatch.setattr(network, "route_for", lambda ip: ("wlan0", "192.168.0.5"))
     monkeypatch.setattr(network, "routing_table", lambda: ROUTES)
-    monkeypatch.setattr(network, "get_mac", lambda iface: "8c:8b:5b:76:f2:df")
+    monkeypatch.setattr(network, "get_mac", lambda iface: "00:00:5e:00:53:05")
     monkeypatch.setattr(scanner, "arp_scan", fake_scan)
     monkeypatch.setattr(names, "resolve_names", lambda ips: {"192.168.0.1": "router.lan"})
     monkeypatch.setattr("socket.gethostname", lambda: "my-laptop")

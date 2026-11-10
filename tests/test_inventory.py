@@ -20,7 +20,7 @@ def test_loads_devices_and_normalizes_macs(tmp_path):
         """
 [[device]]
 name = "Router"
-mac = "94-8F-CF-9A-25-89"
+mac = "00-00-5E-00-53-01"
 
 [[device]]
 name = "Anna's phone"
@@ -28,7 +28,7 @@ hostname = "Annas-iPhone.local"
 """,
     )
     assert load(path) == [
-        KnownDevice(name="Router", mac="94:8f:cf:9a:25:89"),
+        KnownDevice(name="Router", mac="00:00:5e:00:53:01"),
         KnownDevice(name="Anna's phone", hostname="Annas-iPhone.local"),
     ]
 
@@ -52,24 +52,24 @@ def test_invalid_files_explain_what_is_wrong(tmp_path, text, message):
 
 
 KNOWN = [
-    KnownDevice(name="Router", mac="94:8f:cf:9a:25:89"),
+    KnownDevice(name="Router", mac="00:00:5e:00:53:01"),
     KnownDevice(name="Anna's phone", hostname="Annas-iPhone.local"),
-    KnownDevice(name="Laptop", mac="8c:8b:5b:76:f2:df", hostname="laptop"),
+    KnownDevice(name="Laptop", mac="00:00:5e:00:53:05", hostname="laptop"),
 ]
 
 
 def test_matches_by_mac_in_any_case():
-    device = Device(ip="192.168.0.1", mac="94:8F:CF:9A:25:89")
+    device = Device(ip="192.168.0.1", mac="00:00:5E:00:53:01")
     assert match(device, KNOWN).name == "Router"
 
 
 def test_matches_a_changing_mac_by_hostname_with_any_suffix():
-    device = Device(ip="192.168.0.20", mac="de:2e:0c:7e:16:c2", hostname="annas-iphone.lan")
+    device = Device(ip="192.168.0.20", mac="02:00:00:00:00:20", hostname="annas-iphone.lan")
     assert match(device, KNOWN).name == "Anna's phone"
 
 
 def test_mac_wins_over_hostname():
-    device = Device(ip="192.168.0.5", mac="8c:8b:5b:76:f2:df", hostname="Annas-iPhone")
+    device = Device(ip="192.168.0.5", mac="00:00:5e:00:53:05", hostname="Annas-iPhone")
     assert match(device, KNOWN).name == "Laptop"
 
 
@@ -97,7 +97,7 @@ def test_append_creates_a_file_that_loads_back(tmp_path):
 
 
 def test_append_keeps_existing_devices_and_escapes_names(tmp_path):
-    path = write(tmp_path, '[[device]]\nname = "Router"\nmac = "94:8f:cf:9a:25:89"\n')
+    path = write(tmp_path, '[[device]]\nname = "Router"\nmac = "00:00:5e:00:53:01"\n')
     append(path, [Device(ip="192.168.0.7", mac="aa:aa:aa:aa:aa:aa", hostname='TV "Living"')])
 
     assert [d.name for d in load(path)] == ["Router", 'TV "Living"']
@@ -154,6 +154,6 @@ def test_unwritable_file_is_a_clear_error(tmp_path):
 
 
 def test_a_hostname_does_not_vouch_for_a_device_saved_with_its_mac():
-    known = [KnownDevice(name="Laptop", mac="8c:8b:5b:76:f2:df", hostname="laptop")]
+    known = [KnownDevice(name="Laptop", mac="00:00:5e:00:53:05", hostname="laptop")]
     impostor = Device(ip="192.168.0.66", mac="02:66:66:66:66:66", hostname="laptop.local")
     assert match(impostor, known) is None

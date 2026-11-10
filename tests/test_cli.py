@@ -94,7 +94,7 @@ def test_a_user_without_the_capability_cannot_send_raw(monkeypatch):
     assert cli.can_send_raw() is False
 
 
-ROUTER = '[[device]]\nname = "Router"\nmac = "94:8f:cf:9a:25:89"\n'
+ROUTER = '[[device]]\nname = "Router"\nmac = "00:00:5e:00:53:01"\n'
 
 
 def test_known_devices_get_their_names_and_strangers_are_flagged(home_network, tmp_path, capsys):
@@ -132,7 +132,7 @@ def test_save_unknown_adds_strangers_to_the_default_file(home_network, config_ho
 
 def test_save_unknown_with_nothing_new(home_network, tmp_path, capsys):
     devices = tmp_path / "devices.toml"
-    devices.write_text(ROUTER + '\n[[device]]\nname = "Phone"\nmac = "de:2e:0c:7e:16:c2"\n')
+    devices.write_text(ROUTER + '\n[[device]]\nname = "Phone"\nmac = "02:00:00:00:00:20"\n')
 
     assert cli.main(["--devices", str(devices), "--save-unknown"]) == 0
     assert "No unknown devices to add" in capsys.readouterr().err
@@ -196,10 +196,10 @@ def test_watch_prints_the_network_first_and_then_only_changes(
     from netscan.scanner import Device
 
     rounds = [
-        [Device(ip="192.168.0.1", mac="94:8f:cf:9a:25:89")],
-        [Device(ip="192.168.0.1", mac="94:8f:cf:9a:25:89")],
+        [Device(ip="192.168.0.1", mac="00:00:5e:00:53:01")],
+        [Device(ip="192.168.0.1", mac="00:00:5e:00:53:01")],
         [
-            Device(ip="192.168.0.1", mac="94:8f:cf:9a:25:89"),
+            Device(ip="192.168.0.1", mac="00:00:5e:00:53:01"),
             Device(ip="192.168.0.66", mac="02:66:66:66:66:66"),
         ],
     ]

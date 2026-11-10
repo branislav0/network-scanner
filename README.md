@@ -60,7 +60,7 @@ This writes `~/.config/netscan/devices.toml`. Rename the devices to something yo
 ```toml
 [[device]]
 name = "Router"
-mac = "94:8f:cf:9a:25:89"
+mac = "00:00:5e:00:53:01"
 
 [[device]]
 name = "Anna's phone"
@@ -70,7 +70,7 @@ hostname = "Annas-iPhone"    # no mac: matches by name, for phones whose MAC cha
 From then on a device that is not in the list stands out:
 
 ```
-192.168.1.1    94:8f:cf:9a:25:89   Router           ARRIS Group, Inc.
+192.168.1.1    00:00:5e:00:53:01   Router           ARRIS Group, Inc.
 192.168.1.57   5e:11:22:33:44:55   Anna's phone     (random MAC)
 192.168.1.62   f2:aa:bb:cc:dd:ee   ?                (random MAC)   <-- unknown
 -----------------------------------------------------------------------------
