@@ -1,4 +1,4 @@
-FROM python:3.13-slim
+FROM python:3.15-slim
 
 LABEL org.opencontainers.image.source="https://github.com/branislav0/network-scanner" \
       org.opencontainers.image.description="Watch your home network for unknown devices" \
